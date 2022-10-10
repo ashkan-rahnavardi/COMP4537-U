@@ -229,3 +229,9 @@ app.listen(port, async () => {
 
 
 });
+
+
+app.listen(process.env.PORT || port, function (err) {
+    if (err)
+        console.log(err);
+})
