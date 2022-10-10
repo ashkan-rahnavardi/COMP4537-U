@@ -1,0 +1,24 @@
+- [YES] Basic Routes  
+  - GET [2.5]
+    - [YES] GETing all the pokémons. 
+    - [YES] GETing all the pokémons - missing `count` or `after`. 
+    - [YES] GETing all the pokémons - improper values for `count` or `after`. 
+    - [YES] GETing a pokémon. 
+    - [YES] GETing a pokémon - pokémon not found. 
+    - [YES] GETing a pokémon - improper key used to get a pokémon.
+  - POST [1]
+    - [YES] POSTing a pokémon. 
+    - [YES] POSTing a pokémon - improper data
+    - [YES] POSTing a pokémon - duplicate pokémon  
+  - DEL [1]
+    - [YES] DELetting a pokémon. 
+    - [YES] DELetting a pokémon - pokémon not found
+  - PUT [?]
+    - [YES] PUTting a pokémon. 
+    - [YES] POSTing a pokémon - upsert
+  - PATCH [1]
+    - [YES] PATCHing a pokémon. 
+    - [YES] PATCHing a pokémon - pokémon not found
+- Improper Route [✔]
+
+TOTAL = 100%
