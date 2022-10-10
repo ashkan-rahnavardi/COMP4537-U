@@ -33,6 +33,10 @@ async function getPokemons() {
     }
 }
 
+function verifyID(id) {
+
+}
+
 app.listen(port, async () => {
 
     let pokeTypes;
@@ -109,14 +113,24 @@ app.listen(port, async () => {
 
     app.get('/api/v1/pokemon/:id', (req, res) => {
 
-        let pokeID = Number(req.params.id);
+        let pokeID = req.params.id;
 
-        pokemonModel.find({
+        var isNumber = /^\d+$/.test(pokeID);
+
+        if(!isNumber) {
+            res.send("Key Cast Error");
+        } else {
+            pokemonModel.find({
                 id: pokeID
             })
             .then(doc => {
-                console.log(doc)
-                res.json(doc)
+                console.log(doc.length)
+
+                if (doc.length == 0) {
+                    res.send("Pokemon not found (get)");
+                } else {
+                    res.json(doc)
+                }
             })
             .catch(err => {
                 console.error(err)
@@ -124,9 +138,90 @@ app.listen(port, async () => {
                     msg: "db reading .. err.  Check with server devs"
                 })
             })
+        }
     })
 
-    
+    app.use(express.json())
+    app.post('/api/v1/pokemon', (req, res) => {
+
+        pokemonModel.find({
+            id: req.body.id
+        })
+        .then(doc => {
+            if (doc.length > 0) {
+                res.send("duplicate pokemon");
+            } else if (req.body.name.english.length > 20) {
+                res.send("pokemon name too long");
+            } else {
+                pokemonModel.create(req.body, function (err) {
+                    if (err) console.log(err);
+                }); 
+                res.json(req.body)
+            }
+        })
+        .catch(err => {
+            console.error(err)
+            res.json({
+                msg: "db reading .. err.  Check with server devs"
+            })
+        })
+
+    })
+
+    app.put('/api/v1/pokemon', (req, res) => {
+
+        pokemonModel.create(req.body, function (err) {
+            if (err) console.log(err);
+        }); 
+        res.json(req.body)
+    })
+
+    app.patch('/api/v1/pokemon/:id', (req, res) => {
+
+        let pokeID = Number(req.params.id);
+        const { _id, ...rest } = req.body;
+
+        pokemonModel.find({
+            id: pokeID
+        })
+        .then(doc => {
+            if (doc.length == 0) {
+                res.send("pokemon not found (patch)")
+            } else {
+                pokemonModel.updateOne({ id: pokeID }, rest, function (err, res) {
+                    if (err) console.log(err)
+                    console.log(res)
+                });
+            }
+        })
+        .catch(err => {
+            console.error(err)
+            res.json({
+                msg: "db reading .. err.  Check with server devs"
+            })
+        })
+    });
+
+
+    app.delete('/api/v1/pokemon/:id', (req, res) => {
+        
+        let pokeID = Number(req.params.id);
+
+        pokemonModel.find({
+            id: pokeID
+        })
+        .then(doc => {
+            if (doc.length > 0) {
+                pokemonModel.deleteOne({
+                    id: pokeID
+                })
+                res.send("poke deleted");
+            }
+            else {
+                res.send("poke not found (deletion)");
+            }
+        })
+    })
 
 
 });
