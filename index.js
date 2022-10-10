@@ -231,7 +231,7 @@ app.listen(port, async () => {
 });
 
 
-app.listen(process.env.PORT || port, function (err) {
+app.listen(process.env.PORT || 6000, function (err) {
     if (err)
         console.log(err);
 })
