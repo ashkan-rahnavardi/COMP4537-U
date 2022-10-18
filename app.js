@@ -134,7 +134,7 @@ app.get('/pokemonsAdvancedFiltering', async (req, res) => {
     if (comparisonOperators) {
       comparisons = comparisonOperators.split(",").map(item => item.trim())
 
-      // I believe this method below would have worked, except I am unable to pass a variable as the key, so stat does not change in the query. 
+      // I believe this method would be able to work, however they way I am looping through right now causes errors.
 
       comparisons.forEach(element => {
         if(element.includes("<=")) {
