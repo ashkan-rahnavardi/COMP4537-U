@@ -208,31 +208,33 @@ app.get('/pokemonsAdvancedFiltering', async (req, res) => {
 
 app.patch("/pokemonsAdvancedUpdate", async (req, res) => {
 
-  const newTypes = req.query.pushOperator.replace("]", "")
-  newTypes = newTypes.replace("[", "")
-  newTypes = newTypes.pushOperator.split(",")
+  const items = req.query.pushOperator.slice(1, -1)
+  itemsArray = items.split(",").map(item => item.trim())
 
-  console.log(newTypes);
+  console.log(items);
+  console.log(itemsArray);
 
-  // try {
-  //   const selection = { id: req.params.id }
-  //   const update = newTypes[i]
-  //   const options = {
-  //     new: true,
-  //     runValidators: true
-  //   }
-  //   const doc = await pokeModel.findOneAndUpdate(selection, update, options)
-  //   if (doc) {
-  //     res.json({
-  //       msg: "Updated Successfully",
-  //       pokeInfo: doc
-  //     })
-  //   } else {
-  //     res.json({
-  //       msg: "Not found",
-  //     })
-  //   }
-  // } catch (err) { res.json(handleErr(err)) }
+  for (let i = 0; i<itemsArray.length; i++) {
+    try {
+      const selection = { id: req.params.id }
+      const update = {'$push': { type: itemsArray[i] }}
+      const options = {
+        new: true,
+        runValidators: true
+      }
+      const doc = await pokeModel.findOneAndUpdate(selection, update, options)
+      if (doc) {
+        res.json({
+          msg: "Updated Successfully",
+          pokeInfo: doc
+        })
+      } else {
+        res.json({
+          msg: "Not found",
+        })
+      }
+    } catch (err) { res.json(handleErr(err)) }
+  }
 })
 
 
