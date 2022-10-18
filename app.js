@@ -141,42 +141,42 @@ app.get('/pokemonsAdvancedFiltering', async (req, res) => {
           filters = element.split("<=")
           stat = filters[0]
           query.base = {
-            stat: {$lte: filters[1]}
+            [stat]: {$lte: filters[1]}
           }
         }
         if(element.includes("<")) {
           filters = element.split("<")
           stat = filters[0]
           query.base = {
-            stat: {$lt: filters[1]}
+            [stat]: {$lt: filters[1]}
           }
         }
         if(element.includes(">=")) {
           filters = element.split(">=")
           stat = filters[0]
           query.base = {
-            stat: {$gte: filters[1]}
+            [stat]: {$gte: filters[1]}
           }
         }
         if(element.includes("<")) {
           filters = element.split("<")
           stat = filters[0]
           query.base = {
-            stat: {$gt: filters[1]}
+            [stat]: {$gt: filters[1]}
           }
         }
         if(element.includes("!=")) {
           filters = element.split("!=")
           stat = filters[0]
           query.base = {
-            stat: {$ne: filters[1]}
+            [stat]: {$ne: filters[1]}
           }
         }
         if(element.includes("==")) {
           filters = element.split("==")
           stat = filters[0]
           query.base = {
-            stat: {$eq: filters[1]}
+            [stat]: {$eq: filters[1]}
           }
         }
       })
