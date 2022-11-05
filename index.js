@@ -4,11 +4,10 @@ const https = require('https');
 const axios = require('axios');
 
 const app = express();
-const port = 4000;
+const port = 4123;
 
 let typeUrl = "https://raw.githubusercontent.com/fanzeyi/pokemon.json/master/types.json";
 let pokedexUrl = "https://raw.githubusercontent.com/fanzeyi/pokemon.json/master/pokedex.json";
-
 
 async function getTypes() {
     let englishTypes = [];
@@ -223,8 +222,40 @@ app.listen(port, async () => {
         })
     })
 
-    app.get('*', (req, res) => {
-        res.send("IMPROPER ROUTE")
+    // app.get('*', (req, res) => {
+    //     res.send("IMPROPER ROUTE")
+    // })
+
+    app.get('/pokemonsAdvancedFiltering/', async (req, res) => {
+
+
+        console.log(req.query);
+        const {id, base, type, name, sort} = req.query;
+        let query = {};
+
+        if (id) {query.id = id};
+
+        
+
+        if (base.HP) {query.base.HP = base.HP}
+
+        if (comparisonOperators) {
+            query.comparisonOperators = comparisonOperators.split(",").map(item => item.trim())
+        } 
+    
+        console.log(query.comparisonOperators);
+
+
+
+        if (type) {
+            query.type = {
+                $in: type.split(",").map(item => item.trim())
+            }
+        }
+
+        const pokemons = await pokemonModel.find(query);
+        res.send(pokemons);
+
     })
 
 
