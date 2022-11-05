@@ -4,19 +4,32 @@ const { connectDB } = require("./connectDB.js")
 const { populatePokemons } = require("./populatePokemons.js")
 const { getTypes } = require("./getTypes.js")
 const { handleErr } = require("./errorHandler.js")
+const {
+  PokemonBadRequest,
+  PokemonBadRequestMissingID,
+  PokemonBadRequestMissingAfter,
+  PokemonDbError,
+  PokemonNotFoundError,
+  PokemonDuplicateError,
+  PokemonNoSuchRouteError, 
+  PokemonBadID,
+  PokemonBadCount,
+  PokemonBadAfter
+} = require("./errors.js")
 const app = express()
-const port = 5000
+const port = 3000
 var pokeModel = null;
 
+const { asyncWrapper } = require("./asyncWrapper.js")
+
 const start = async () => {
-  // console.log("starting the server");
   await connectDB();
   const pokeSchema = await getTypes();
   pokeModel = await populatePokemons(pokeSchema);
 
   app.listen(port, (err) => {
-    // console.log("app.listen started");
-    if (err) console.log(err);
+    if (err) 
+      throw new PokemonDbError(err)
     else
       console.log(`Phew! Server is running on port: ${port}`);
   })
@@ -163,104 +176,94 @@ app.get("/pokemonsAdvancedFiltering", async (req, res) => {
 
 
 
-app.get('/api/v1/pokemons', async (req, res) => {
-  console.log("GET /api/v1/pokemons");
-  if (!req.query["count"])
-    req.query["count"] = 10
-  if (!req.query["after"])
-    req.query["after"] = 0
-  try {
-    const docs = await pokeModel.find({})
-      .sort({ "id": 1 })
-      .skip(req.query["after"])
-      .limit(req.query["count"])
-    res.json(docs)
-  } catch (err) { res.json(handleErr(err)) }
-})
+app.get('/api/v1/pokemons', asyncWrapper(async (req, res) => {
 
-app.get('/api/v1/pokemon/:id', async (req, res) => {
-  try {
-    const { id } = req.params
-    const docs = await pokeModel.find({ "id": id })
-    if (docs.length != 0) res.json(docs)
-    else res.json({ errMsg: "Pokemon not found" })
-  } catch (err) { res.json(handleErr(err)) }
-})
+  let {count, after} = req.query;
+
+  if (!count) count = 10;
+  if (!after) after = 0;
+  if (isNaN(count)) throw new PokemonBadCount();
+  if (isNaN(after)) throw new PokemonBadAfter();
+  
+  const docs = await pokeModel.find({})
+    .sort({ "id": 1 })
+    .skip(after)
+    .limit(count)
+  res.json(docs)
+}))
+
+app.get('/api/v1/pokemon/:id', asyncWrapper(async (req, res) => {
+  const { id } = req.params
+  if (isNaN(id)) throw new PokemonBadID();
+  const docs = await pokeModel.find({ "id": id })
+  if (docs.length != 0) res.json(docs)
+  else throw new PokemonNotFoundError();
+}))
 
 app.use(express.json())
 
-app.post('/api/v1/pokemon/', async (req, res) => {
-  try {
-    const pokeDoc = await pokeModel.create(req.body)
-    // console.log(pokeDoc);
+app.post('/api/v1/pokemon/', asyncWrapper(async (req, res) => {
+  if (!req.body.id) throw new PokemonBadRequestMissingID()
+  const poke = await pokeModel.find({ "id": req.body.id })
+  if (poke.length != 0) throw new PokemonDuplicateError()
+  const pokeDoc = await pokeModel.create(req.body)
+  res.json({
+    msg: "Added Successfully"
+  })
+}))
+
+app.delete('/api/v1/pokemon/:id', asyncWrapper(async (req, res) => {
+  const docs = await pokeModel.findOneAndRemove({ id: req.params.id })
+  if (docs)
     res.json({
-      msg: "Added Successfully"
+      msg: "Deleted Successfully"
     })
-  } catch (err) { res.json(handleErr(err)) }
-})
+  else
+    throw new PokemonNotFoundError("");
+}))
 
-app.delete('/api/v1/pokemon/:id', async (req, res) => {
-  try {
-    const docs = await pokeModel.findOneAndRemove({ id: req.params.id })
-    if (docs)
-      res.json({
-        msg: "Deleted Successfully"
-      })
-    else
-      res.json({
-        errMsg: "Pokemon not found"
-      })
-  } catch (err) { res.json(handleErr(err)) }
-})
+app.put('/api/v1/pokemon/:id', asyncWrapper(async (req, res) => {
+  // try {
+  const selection = { id: req.params.id }
+  const update = req.body
+  const options = {
+    new: true,
+    runValidators: true,
+    overwrite: true
+  }
+  const doc = await pokeModel.findOneAndUpdate(selection, update, options)
+  if (doc) {
+    res.json({
+      msg: "Updated Successfully",
+      pokeInfo: doc
+    })
+  } else {
+    throw new PokemonNotFoundError("");
+  }
+}))
 
-app.put('/api/v1/pokemon/:id', async (req, res) => {
-  try {
-    const selection = { id: req.params.id }
-    const update = req.body
-    const options = {
-      new: true,
-      runValidators: true,
-      overwrite: true
-    }
-    const doc = await pokeModel.findOneAndUpdate(selection, update, options)
-    // console.log(docs);
-    if (doc) {
-      res.json({
-        msg: "Updated Successfully",
-        pokeInfo: doc
-      })
-    } else {
-      res.json({
-        msg: "Not found",
-      })
-    }
-  } catch (err) { res.json(handleErr(err)) }
-})
-
-app.patch('/api/v1/pokemon/:id', async (req, res) => {
-  try {
-    const selection = { id: req.params.id }
-    const update = req.body
-    const options = {
-      new: true,
-      runValidators: true
-    }
-    const doc = await pokeModel.findOneAndUpdate(selection, update, options)
-    if (doc) {
-      res.json({
-        msg: "Updated Successfully",
-        pokeInfo: doc
-      })
-    } else {
-      res.json({
-        msg: "Not found",
-      })
-    }
-  } catch (err) { res.json(handleErr(err)) }
-})
+app.patch('/api/v1/pokemon/:id', asyncWrapper(async (req, res) => {
+  // try {
+  const selection = { id: req.params.id }
+  const update = req.body
+  const options = {
+    new: true,
+    runValidators: true
+  }
+  const doc = await pokeModel.findOneAndUpdate(selection, update, options)
+  if (doc) {
+    res.json({
+      msg: "Updated Successfully",
+      pokeInfo: doc
+    })
+  } else {
+    throw new PokemonNotFoundError("");
+  }
+}))
 
 app.get("*", (req, res) => {
-  res.json({
-    msg: "Improper route. Check API docs plz."
-  })
+  throw new PokemonNoSuchRouteError("");
 })
+
+
+app.use(handleErr)

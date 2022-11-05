@@ -52,6 +52,33 @@ class PokemonBadRequest extends Error {
     }
   }
   
+  class PokemonBadID extends PokemonBadRequest {
+    constructor(message) {
+      super(message);
+      this.name = 'PokemonBadID';
+      this.message = "Error - Improper ID: must be a number";
+      this.pokeErrCode = 400;
+    }
+   }
+
+   class PokemonBadCount extends PokemonBadRequest {
+    constructor(message) {
+      super(message);
+      this.name = 'PokemonBadCount';
+      this.message = "Error - Improper Count: must be a number";
+      this.pokeErrCode = 400;
+    }
+   }
+
+   class PokemonBadAfter extends PokemonBadRequest {
+    constructor(message) {
+      super(message);
+      this.name = 'PokemonBadAfter';
+      this.message = "Error - Improper After: must be a number";
+      this.pokeErrCode = 400;
+    }
+   }
+
   class PokemonNoSuchRouteError extends PokemonBadRequest {
     constructor(message) {
       super(message);
@@ -68,5 +95,8 @@ class PokemonBadRequest extends Error {
     PokemonDbError,
     PokemonNotFoundError,
     PokemonDuplicateError,
-    PokemonNoSuchRouteError
+    PokemonNoSuchRouteError, 
+    PokemonBadID,
+    PokemonBadCount,
+    PokemonBadAfter
   };
