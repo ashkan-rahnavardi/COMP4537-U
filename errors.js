@@ -2,7 +2,7 @@ class PokemonBadRequest extends Error {
     constructor(message) {
       super(message);
       this.name = 'PokemonBadRequest';
-      this.message = "Error - Bad request: check the API doc";
+      this.message = message;
       this.pokeErrCode = 400;
     }
   }
