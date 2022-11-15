@@ -4,6 +4,7 @@ const { connectDB } = require("./connectDB.js")
 const { populatePokemons } = require("./populatePokemons.js")
 const { getTypes } = require("./getTypes.js")
 const { handleErr } = require("./errorHandler.js")
+const cookieParser = require('cookie-parser');
 const {
   PokemonBadRequest,
   PokemonBadRequestMissingID,
@@ -16,15 +17,19 @@ const {
   PokemonBadCount,
   PokemonBadAfter
 } = require("./errors.js")
-const app = express()
-var pokeModel = null;
 
 const { asyncWrapper } = require("./asyncWrapper.js")
 
 const dotenv = require("dotenv")
 dotenv.config();
 
+const app = express()
+var pokeModel = null;
+
 const userModel = require("./userModel.js")
+
+app.use(cookieParser());
+app.use(express.urlencoded());
 
 const start = async () => {
   await connectDB();
@@ -66,13 +71,16 @@ app.post('/login', asyncWrapper(async (req, res) => {
 
   // Create and assign a token
   const token = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET)
+  res.cookie("auth-token", token)
   res.header('auth-token', token)
 
   res.send(user)
 }))
 
 const auth = (req, res, next) => {
-  const token = req.header('auth-token')
+  const {token} = req.cookies;
+  console.log(token)
+  // const token = req.header('auth-token')
   if (!token) {
     throw new PokemonBadRequest("Access denied")
   }
@@ -192,8 +200,6 @@ app.get("/pokemonsAdvancedFiltering", async (req, res) => {
       console.log(query);
     });
   }
-
-
 
   const mongooseQuery = pokeModel.find(query);
 
