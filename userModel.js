@@ -26,6 +26,15 @@ const schema = new mongoose.Schema({
   date: {
     type: Date,
     default: Date.now
+  }, 
+  token: {
+    type: String
+  }, 
+  isAdmin: {
+    type: Boolean, 
+  }, 
+  isTokenValid: {
+    type: Boolean
   }
 })
 
