@@ -4,7 +4,6 @@ const { connectDB } = require("./connectDB.js")
 const { populatePokemons } = require("./populatePokemons.js")
 const { getTypes } = require("./getTypes.js")
 const { handleErr } = require("./errorHandler.js")
-const cookieParser = require('cookie-parser');
 const {
   PokemonBadRequest,
   PokemonBadRequestMissingID,
@@ -12,68 +11,30 @@ const {
   PokemonDbError,
   PokemonNotFoundError,
   PokemonDuplicateError,
-  PokemonNoSuchRouteError,
+  PokemonNoSuchRouteError, 
   PokemonBadID,
   PokemonBadCount,
   PokemonBadAfter
 } = require("./errors.js")
-const userModel = require("./userModel.js")
-const { asyncWrapper } = require("./asyncWrapper.js")
-
-const dotenv = require("dotenv")
-dotenv.config();
-
 const app = express()
+const port = 3000
 var pokeModel = null;
 
-// const userModel = require("./userModel.js")
-
-app.use(cookieParser());
-app.use(express.urlencoded());
+const { asyncWrapper } = require("./asyncWrapper.js")
 
 const start = async () => {
   await connectDB();
   const pokeSchema = await getTypes();
   pokeModel = await populatePokemons(pokeSchema);
 
-  app.listen(process.env.pokeServerPORT, (err) => {
-    if (err)
+  app.listen(port, (err) => {
+    if (err) 
       throw new PokemonDbError(err)
     else
-      console.log(`Phew! Server is running on port: ${process.env.pokeServerPORT}`);
+      console.log(`Phew! Server is running on port: ${port}`);
   })
 }
 start()
-app.use(express.json())
-const jwt = require("jsonwebtoken")
-
-const auth = asyncWrapper(async(req, res, next) => {
-  // const token = req.cookies.authToken; 
-  // const token = req.header('auth-token')
-
-  const token = req.query.appid
-
-  if (!token) {
-    throw new PokemonBadRequest("Access denied")
-  }
-
-  try {
-    const user = await userModel.find({ "token": token })
-
-    const valid = user[0].isTokenValid
-  
-    if (!valid) {
-      throw new PokemonBadRequest("Invalid token")
-    }
-    const verified = jwt.verify(token, process.env.TOKEN_SECRET) // nothing happens if token is valid
-    next()
-  } catch (err) {
-    throw new PokemonBadRequest("Invalid token")
-  }
-})
-
-app.use(auth)
-
 
 app.patch("/pokemonsAdvancedUpdate", async (req, res) => {
   const { id,
@@ -95,6 +56,7 @@ app.patch("/pokemonsAdvancedUpdate", async (req, res) => {
           const options = {
             new: true,
             runValidators: true
+            // overwrite: true
           }
           const doc = await pokeModel.findOneAndUpdate(selection, update, options)
           console.log(doc);
@@ -117,7 +79,11 @@ app.patch("/pokemonsAdvancedUpdate", async (req, res) => {
         }
       }
     )
+
+
+
   }
+
 })
 
 app.get("/pokemonsAdvancedFiltering", async (req, res) => {
@@ -172,15 +138,23 @@ app.get("/pokemonsAdvancedFiltering", async (req, res) => {
     }
     comparisonOperatorsArray.map(element => {
       console.log(element);
+      // const regex = /(<|>|<=|>=|=|!=)/g
       let mongooseQuery = element.replace(/(<=|>=|<|>|!=|==)/g, (match) => {
         console.log(match);
         return "-" + comparisonOperatorsMap[match] + "-"
       })
+      // console.log(mongooseQuery);
       const [field, operator, value] = mongooseQuery.split('-');
+      // const obj = {}
+      // obj[field] = {}
+      // obj[field][operator] = Number(value)
+      // query["base"] = obj
       query["base." + field] = { [operator]: Number(value) }
       console.log(query);
     });
   }
+
+
 
   const mongooseQuery = pokeModel.find(query);
 
@@ -189,6 +163,10 @@ app.get("/pokemonsAdvancedFiltering", async (req, res) => {
   if (filteredProperty)
     mongooseQuery.select(filteredProperty.replace(/, /g, " ") + " -_id")
 
+  // if (comparisonOperators)
+
+
+
   const pokemons = await mongooseQuery;
   res.send({
     hits: pokemons,
@@ -196,15 +174,17 @@ app.get("/pokemonsAdvancedFiltering", async (req, res) => {
   })
 })
 
+
+
 app.get('/api/v1/pokemons', asyncWrapper(async (req, res) => {
 
-  let { count, after } = req.query;
+  let {count, after} = req.query;
 
   if (!count) count = 10;
   if (!after) after = 0;
   if (isNaN(count)) throw new PokemonBadCount();
   if (isNaN(after)) throw new PokemonBadAfter();
-
+  
   const docs = await pokeModel.find({})
     .sort({ "id": 1 })
     .skip(after)
@@ -220,105 +200,65 @@ app.get('/api/v1/pokemon/:id', asyncWrapper(async (req, res) => {
   else throw new PokemonNotFoundError();
 }))
 
+app.use(express.json())
+
 app.post('/api/v1/pokemon/', asyncWrapper(async (req, res) => {
-
-  const token = req.query.appid;
-  const user = await userModel.find({ "token": token })
-
-  const admin = user[0].isAdmin;
-
-  if (!admin) {
-    throw new PokemonBadRequest("Only available for admins")
-  } else {
-    if (!req.body.id) throw new PokemonBadRequestMissingID()
-    const poke = await pokeModel.find({ "id": req.body.id })
-    if (poke.length != 0) throw new PokemonDuplicateError()
-    const pokeDoc = await pokeModel.create(req.body)
-    res.json({
-      msg: "Added Successfully"
-    })
-  }
-
+  if (!req.body.id) throw new PokemonBadRequestMissingID()
+  const poke = await pokeModel.find({ "id": req.body.id })
+  if (poke.length != 0) throw new PokemonDuplicateError()
+  const pokeDoc = await pokeModel.create(req.body)
+  res.json({
+    msg: "Added Successfully"
+  })
 }))
 
 app.delete('/api/v1/pokemon/:id', asyncWrapper(async (req, res) => {
-
-  const token = req.query.appid;
-  const user = await userModel.find({ "token": token })
-
-  const admin = user[0].isAdmin;
-
-  if (!admin) {
-    throw new PokemonBadRequest("Only available for admins")
-  } else {
-    const docs = await pokeModel.findOneAndRemove({ id: req.params.id })
-    if (docs)
-      res.json({
-        msg: "Deleted Successfully"
-      })
-    else
-      throw new PokemonNotFoundError("");
-  }
-
+  const docs = await pokeModel.findOneAndRemove({ id: req.params.id })
+  if (docs)
+    res.json({
+      msg: "Deleted Successfully"
+    })
+  else
+    throw new PokemonNotFoundError("");
 }))
 
 app.put('/api/v1/pokemon/:id', asyncWrapper(async (req, res) => {
-
-  const token = req.query.appid;
-  const user = await userModel.find({ "token": token })
-
-  const admin = user[0].isAdmin;
-
-  if (!admin) {
-    throw new PokemonBadRequest("Only available for admins")
-  } else {
-    const selection = { id: req.params.id }
-    const update = req.body
-    const options = {
-      new: true,
-      runValidators: true,
-      overwrite: true
-    }
-    const doc = await pokeModel.findOneAndUpdate(selection, update, options)
-    if (doc) {
-      res.json({
-        msg: "Updated Successfully",
-        pokeInfo: doc
-      })
-    } else {
-      throw new PokemonNotFoundError("");
-    }
-  }
   // try {
+  const selection = { id: req.params.id }
+  const update = req.body
+  const options = {
+    new: true,
+    runValidators: true,
+    overwrite: true
+  }
+  const doc = await pokeModel.findOneAndUpdate(selection, update, options)
+  if (doc) {
+    res.json({
+      msg: "Updated Successfully",
+      pokeInfo: doc
+    })
+  } else {
+    throw new PokemonNotFoundError("");
+  }
 }))
 
 app.patch('/api/v1/pokemon/:id', asyncWrapper(async (req, res) => {
-
-  const token = req.query.appid;
-  const user = await userModel.find({ "token": token })
-
-  const admin = user[0].isAdmin;
-
-  if (!admin) {
-    throw new PokemonBadRequest("Only available for admins")
-  } else {
-    const selection = { id: req.params.id }
-    const update = req.body
-    const options = {
-      new: true,
-      runValidators: true
-    }
-    const doc = await pokeModel.findOneAndUpdate(selection, update, options)
-    if (doc) {
-      res.json({
-        msg: "Updated Successfully",
-        pokeInfo: doc
-      })
-    } else {
-      throw new PokemonNotFoundError("");
-    }
+  // try {
+  const selection = { id: req.params.id }
+  const update = req.body
+  const options = {
+    new: true,
+    runValidators: true
   }
-  // try 
+  const doc = await pokeModel.findOneAndUpdate(selection, update, options)
+  if (doc) {
+    res.json({
+      msg: "Updated Successfully",
+      pokeInfo: doc
+    })
+  } else {
+    throw new PokemonNotFoundError("");
+  }
 }))
 
 app.get("*", (req, res) => {
