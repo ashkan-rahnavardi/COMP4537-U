@@ -4,6 +4,7 @@ import axios from 'axios'
 import './index.css';
 import FilteredPagination from './FilteredPagination'
 import Search from './Search'
+import Login from './Login';
 
 
 function App() {
@@ -30,12 +31,6 @@ function App() {
     console.log(pokemons.current);
   }
 
-  // useEffect(() => {
-  //   fetch("http://localhost:3001/api")
-  //     .then((res) => res.json())
-  //     .then((data) => setData(data.message));
-  // }, []);
-
   // passing an empty array as a second argument to useEffect will make it run only once
   useEffect(() => {
     getPokemonTypes();
@@ -45,12 +40,10 @@ function App() {
 
   return (
     <>
-      <Search types={types} checkedState={checkedState} setCheckedState={setCheckedState} />
-      <FilteredPagination types={types} checkedState={checkedState} />
+      <Login />
+      {/* <Search types={types} checkedState={checkedState} setCheckedState={setCheckedState} />
+      <FilteredPagination types={types} checkedState={checkedState} /> */}
     </>
-    // <div className="App">
-    //   <h1>{data}</h1>
-    // </div>
   );
 }
 

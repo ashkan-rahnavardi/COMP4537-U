@@ -10,6 +10,8 @@ const { handleErr } = require("./errorHandler.js")
 const morgan = require("morgan")
 const dotenv = require("dotenv")
 const { asyncWrapper } = require("./asyncWrapper.js")
+const userModel = require("./userModel.js")
+const bodyParser = require('body-parser');
 
 const {
   PokemonBadRequest,
@@ -28,6 +30,7 @@ var pokeModel = null;
 
 app.use(cors());
 app.use(express.json());
+app.use(bodyParser.urlencoded({limit: '5000mb', extended: true, parameterLimit: 100000000000}));
 
 
 const start = asyncWrapper(async () => {
@@ -45,9 +48,52 @@ const start = asyncWrapper(async () => {
 })
 
 start()
+
+const bcrypt = require("bcrypt")
+app.post('/register', asyncWrapper(async (req, res) => {
+  const { username, password, email, role } = req.body
+
+  const salt = await bcrypt.genSalt(10)
+  const hashedPassword = await bcrypt.hash(password, salt)
+  const userWithHashedPassword = { ...req.body, password: hashedPassword }
+
+  const user = await userModel.create(userWithHashedPassword)
+  res.redirect('http://localhost:3000/');
+}))
+
 const jwt = require("jsonwebtoken")
-// const { findOne } = require("./userModel.js")
-const userModel = require("./userModel.js")
+app.post('/login', asyncWrapper(async (req, res) => {
+  const { username, password } = req.body
+  const user = await userModel.findOne({username})
+  console.log(user);
+  if (!user) {
+    throw new PokemonAuthError("User not found")
+  }
+  const isPasswordCorrect = await bcrypt.compare(password, user.password)
+  if (!isPasswordCorrect) {
+    throw new PokemonAuthError("Password is incorrect")
+  }
+
+  if (!user.token) {
+    // Create and assign a token
+    const token = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET)
+    console.log(token);
+    await userModel.updateOne({ username }, { token })
+    res.header('auth-token', token)
+  } else {
+    res.header('auth-token', user.token)
+  }
+  const updatedUser = await userModel.findOneAndUpdate({ username }, { "token_invalid": false })
+
+  if (user.role === "admin") {
+    res.header('isAdmin', true);
+  } else {
+    res.header('isAdmin', false);
+  }
+
+  res.redirect('http://localhost:3000/');
+}))
+
 
 const authUser = asyncWrapper(async (req, res, next) => {
   // const to ken = req.header('auth-token')
