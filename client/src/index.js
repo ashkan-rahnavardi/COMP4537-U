@@ -1,10 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import axios from 'axios'
 import './index.css';
 import FilteredPagination from './FilteredPagination'
 import Search from './Search'
-import Login from './Login';
+import Login from './pages/Login';
+import Register from './pages/Register';
 
 
 function App() {
@@ -39,11 +41,15 @@ function App() {
 
 
   return (
-    <>
-      <Login />
-      {/* <Search types={types} checkedState={checkedState} setCheckedState={setCheckedState} />
-      <FilteredPagination types={types} checkedState={checkedState} /> */}
-    </>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+      </Routes>
+    </BrowserRouter>
+    // <>
+    //   <Search types={types} checkedState={checkedState} setCheckedState={setCheckedState} />
+    //   <FilteredPagination types={types} checkedState={checkedState} />
+    // </>
   );
 }
 

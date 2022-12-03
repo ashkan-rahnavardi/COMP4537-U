@@ -34,7 +34,7 @@ app.use(bodyParser.urlencoded({limit: '5000mb', extended: true, parameterLimit: 
 
 
 const start = asyncWrapper(async () => {
-  await connectDB({ "drop": false });
+  await connectDB({ "drop": true });
   const pokeSchema = await getTypes();
   // pokeModel = await populatePokemons(pokeSchema);
   pokeModel = mongoose.model('pokemons', pokeSchema);
@@ -53,12 +53,15 @@ const bcrypt = require("bcrypt")
 app.post('/register', asyncWrapper(async (req, res) => {
   const { username, password, email, role } = req.body
 
+  console.log(req.body);
+
   const salt = await bcrypt.genSalt(10)
   const hashedPassword = await bcrypt.hash(password, salt)
   const userWithHashedPassword = { ...req.body, password: hashedPassword }
 
   const user = await userModel.create(userWithHashedPassword)
-  res.redirect('http://localhost:3000/');
+  res.send(user)
+  // res.redirect('http://localhost:3000/');
 }))
 
 const jwt = require("jsonwebtoken")
