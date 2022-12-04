@@ -3,24 +3,35 @@ import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
+import Alert from '@mui/material/Alert';
+import Link from '@mui/material/Link';
 import axios from 'axios';
 
-export default function Login() {
+export default function Login(admin) {
+
+    const [showAlert, setShowAlert] = useState(null);
 
     let handleSubmit = () => {
         var name = document.getElementById('name').value;
         var password = document.getElementById('password').value;
-        var email = document.getElementById('email').value;
-        var role = document.getElementById('role').value;
         
         let data = {
-            username: name,
-            password: password,
-            email: email,
-            role: role
+            'username': name,
+            'password': password,
         }
 
-        axios.post('http://localhost:3001/register', data)
+        axios.post('http://localhost:3001/login', data)
+            .then(res => {
+                //console.log(res.data.isAdmin);
+                if (res.data.isAdmin === true) {
+                    admin.admin();
+                }
+                window.location.href = '/api';
+            })
+            .catch(err => {
+                console.log(err);
+                setShowAlert(err.response.data);
+            })
     }
 
 
@@ -39,37 +50,16 @@ export default function Login() {
                 id="password"
                 required
                 label="password"/> <br/>
-            <TextField
-                size='small'
-                id="email"
-                required
-                label="email"/> <br/>
-            <TextField
-                size='small'
-                id="role"
-                required
-                label="role"/> <br/>
-            <Button variant='outlined' onClick={handleSubmit}>Register</Button>
+            <Button variant='outlined' onClick={handleSubmit}>Login</Button>
+            <br/>
+            <Link href='/register'>Don't have an account? Click Here</Link>
         </Box>
     )
 
 
-    const registerForm = (
-        <form action='http://localhost:3001/register' method="POST">
-            <label>Name:    </label>
-            <input type="text" name="username" /> <br/>
-            <label>Password: </label>
-            <input type="text" name="password" /> <br/>
-            <label>Email: </label>
-            <input type="text" name="email" /> <br/>
-            <label>Role: </label>
-            <input type="text" name="role" /> <br/>
-            <input type="submit" value="Submit" />
-        </form>
-    )
-
-
     return (
+        <>
+        {showAlert && <Alert variant='filled' severity="error" onClose={() => {setShowAlert(null)}}>{showAlert}</Alert>}
         <Box
             sx={{
                 width: '100%',
@@ -80,5 +70,6 @@ export default function Login() {
             }}>
             {register}
         </Box>
+        </>
     )
 }

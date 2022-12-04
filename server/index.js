@@ -28,7 +28,11 @@ dotenv.config();
 
 var pokeModel = null;
 
-app.use(cors());
+const corsOptions = {
+  exposedHeaders: 'auth-token',
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(bodyParser.urlencoded({limit: '5000mb', extended: true, parameterLimit: 100000000000}));
 
@@ -53,15 +57,21 @@ const bcrypt = require("bcrypt")
 app.post('/register', asyncWrapper(async (req, res) => {
   const { username, password, email, role } = req.body
 
-  console.log(req.body);
+  console.log('Request body: ', req.body)
 
   const salt = await bcrypt.genSalt(10)
   const hashedPassword = await bcrypt.hash(password, salt)
   const userWithHashedPassword = { ...req.body, password: hashedPassword }
 
-  const user = await userModel.create(userWithHashedPassword)
-  res.send(user)
-  // res.redirect('http://localhost:3000/');
+  //const user = await userModel.create(userWithHashedPassword)
+  try {
+    const user = await userModel.create(userWithHashedPassword)
+    res.send('User created')
+  } 
+  catch (err) {
+    res.send(err.message)
+  }
+  //res.redirect('http://localhost:3000/login');
 }))
 
 const jwt = require("jsonwebtoken")
@@ -89,12 +99,12 @@ app.post('/login', asyncWrapper(async (req, res) => {
   const updatedUser = await userModel.findOneAndUpdate({ username }, { "token_invalid": false })
 
   if (user.role === "admin") {
-    res.header('isAdmin', true);
+    res.send({'isAdmin': true});
   } else {
-    res.header('isAdmin', false);
+    res.send({'isAdmin': false});
   }
 
-  res.redirect('http://localhost:3000/');
+  // res.redirect('http://localhost:3000/');
 }))
 
 

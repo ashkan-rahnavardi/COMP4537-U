@@ -13,10 +13,10 @@ function App() {
   const [data, setData] = React.useState(null);
   // Array representing if pokemon type is checked or not
   const [checkedState, setCheckedState] = useState([]);
+  const [isAdmin, setIsAdmin] = useState(false);
   // Array of pokemon types
   const types = useRef([])
   const pokemons = useRef({})
-  // const [pokemons, setPokemons] = useState(null);
 
   // Fetch pokemon types, set checkedState to false for each type, and set types
   async function getPokemonTypes() {
@@ -39,16 +39,34 @@ function App() {
     getPokemons();
   }, [])
 
+  function admin() {
+    setIsAdmin(true);
+  }
+
+  useEffect(() => {
+    console.log(isAdmin);
+  }, [isAdmin])
+
+  let baseAPI = ( 
+      <>
+        <Search types={types} checkedState={checkedState} setCheckedState={setCheckedState} />
+        <FilteredPagination types={types} checkedState={checkedState} />
+      </>
+  )
+
 
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={<Login />} />
+        <Route path="/" element={<Login admin={admin}/>} />
+        <Route index element={<Login admin={admin}/>} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/api" element={baseAPI} />
       </Routes>
     </BrowserRouter>
     // <>
-    //   <Search types={types} checkedState={checkedState} setCheckedState={setCheckedState} />
-    //   <FilteredPagination types={types} checkedState={checkedState} />
+      // <Search types={types} checkedState={checkedState} setCheckedState={setCheckedState} />
+      // <FilteredPagination types={types} checkedState={checkedState} />
     // </>
   );
 }

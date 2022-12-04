@@ -3,9 +3,12 @@ import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
+import Alert from '@mui/material/Alert';
 import axios from 'axios';
 
 export default function Register() {
+
+    const [showAlert, setShowAlert] = useState(null);
 
     let handleSubmit = () => {
         var name = document.getElementById('name').value;
@@ -14,13 +17,24 @@ export default function Register() {
         var role = document.getElementById('role').value;
         
         let data = {
-            username: name,
-            password: password,
-            email: email,
-            role: role
+            'username': name,
+            'password': password,
+            'email': email,
+            'role': role
         }
 
         axios.post('http://localhost:3001/register', data)
+            .then(res => {
+                console.log(res);
+                if (res.data === 'User created') {
+                    window.location.href = '/';
+                } else {
+                    setShowAlert(res.data);
+                }
+            })
+            .catch(err => {
+                setShowAlert(err);
+            })
     }
 
 
@@ -70,6 +84,8 @@ export default function Register() {
 
 
     return (
+        <>
+        {showAlert && <Alert variant='filled' severity="error" onClose={() => {setShowAlert(null)}}>{showAlert}</Alert>}
         <Box
             sx={{
                 width: '100%',
@@ -80,5 +96,6 @@ export default function Register() {
             }}>
             {register}
         </Box>
+        </>
     )
 }
