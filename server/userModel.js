@@ -33,6 +33,12 @@ const schema = new mongoose.Schema({
     trim: true,
     default: null
   },
+  refToken: {
+    type: String,
+    required: false,
+    trim: true,
+    default: null
+  },
   token_invalid: {
     type: Boolean,
     required: false,

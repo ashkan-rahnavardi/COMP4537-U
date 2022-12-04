@@ -7,6 +7,7 @@ import FilteredPagination from './FilteredPagination'
 import Search from './Search'
 import Login from './pages/Login';
 import Register from './pages/Register';
+import Dashboard from './pages/Dashboard';
 
 
 function App() {
@@ -14,6 +15,8 @@ function App() {
   // Array representing if pokemon type is checked or not
   const [checkedState, setCheckedState] = useState([]);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [accessToken, setAccessToken] = useState('');
+  const [refreshToken, setRefreshToken] = useState('');
   // Array of pokemon types
   const types = useRef([])
   const pokemons = useRef({})
@@ -39,13 +42,10 @@ function App() {
     getPokemons();
   }, [])
 
-  function admin() {
-    setIsAdmin(true);
-  }
-
   useEffect(() => {
-    console.log(isAdmin);
-  }, [isAdmin])
+    console.log(accessToken);
+    console.log(refreshToken);
+  }, [accessToken, refreshToken])
 
   let baseAPI = ( 
       <>
@@ -54,14 +54,22 @@ function App() {
       </>
   )
 
+  let adminAPI = (
+    <>
+    <Dashboard accessToken={accessToken} setAccessToken={setAccessToken} refreshToken={refreshToken} />
+    <Search types={types} checkedState={checkedState} setCheckedState={setCheckedState} />
+    <FilteredPagination types={types} checkedState={checkedState} />
+    </>
+  )
 
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Login admin={admin}/>} />
-        <Route index element={<Login admin={admin}/>} />
+        <Route path="/" element={<Login admin={isAdmin} setAdmin={setIsAdmin} accessToken={accessToken} setAccessToken={setAccessToken} refreshToken={refreshToken} setRefreshToken={setRefreshToken}/>} />
+        <Route index element={<Login admin={isAdmin} setAdmin={setIsAdmin} accessToken={accessToken} setAccessToken={setAccessToken} refreshToken={refreshToken} setRefreshToken={setRefreshToken}/>}/>
         <Route path="/register" element={<Register />} />
-        <Route path="/api" element={baseAPI} />
+        <Route path='/api' element={baseAPI} />
+        <Route path='/admin' element={adminAPI} />
       </Routes>
     </BrowserRouter>
     // <>

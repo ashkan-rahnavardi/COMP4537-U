@@ -25,7 +25,7 @@ function Report({ id, accessToken, setAccessToken, refreshToken }) {
 
   const refreshAccessToken = async () => {
     try {
-      const res = await axios.post("http://localhost:5000/requestNewAccessToken", {}, {
+      const res = await axios.post("http://localhost:3001/requestNewAccessToken", {}, {
         headers: {
           'auth-token-refresh': refreshToken
         }

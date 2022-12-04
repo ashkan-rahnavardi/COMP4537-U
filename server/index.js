@@ -28,8 +28,10 @@ dotenv.config();
 
 var pokeModel = null;
 
+var data = [];
+
 const corsOptions = {
-  exposedHeaders: 'auth-token',
+  exposedHeaders: 'auth-token-access, auth-token-refresh'
 };
 
 app.use(cors(corsOptions));
@@ -76,6 +78,8 @@ app.post('/register', asyncWrapper(async (req, res) => {
 
 const jwt = require("jsonwebtoken")
 app.post('/login', asyncWrapper(async (req, res) => {
+
+  data.push(req.body);
   const { username, password } = req.body
   const user = await userModel.findOne({username})
   console.log(user);
@@ -90,11 +94,15 @@ app.post('/login', asyncWrapper(async (req, res) => {
   if (!user.token) {
     // Create and assign a token
     const token = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET)
+    const refToken = jwt.sign({ _id: user._id }, process.env.REF_TOKEN_SECRET)
     console.log(token);
-    await userModel.updateOne({ username }, { token })
-    res.header('auth-token', token)
+    console.log(refToken);
+    await userModel.updateOne({ username }, { token, refToken })
+    res.header('auth-token-access', token)
+    res.header('auth-token-refresh', refToken)
   } else {
-    res.header('auth-token', user.token)
+    res.header('auth-token-access', user.token)
+    res.header('auth-token-refresh', user.refToken)
   }
   const updatedUser = await userModel.findOneAndUpdate({ username }, { "token_invalid": false })
 
@@ -104,7 +112,6 @@ app.post('/login', asyncWrapper(async (req, res) => {
     res.send({'isAdmin': false});
   }
 
-  // res.redirect('http://localhost:3000/');
 }))
 
 
@@ -146,22 +153,11 @@ app.get("/pokemons", asyncWrapper(async (req, res) => {
   res.json(docs);
 }));
 
+app.get("/report/:id", asyncWrapper(async (req, res) => {
+  res.send(data);
+  console.log(data);
+}));
+
+console.log(data);
+
 app.use(handleErr);
-
-
-// const PORT = process.env.PORT || 3001;
-
-// const express = require("express");
-// const cors = require("cors");
-// const app = express();
-
-// app.use(cors());
-// app.use(express.json());
-
-// app.get('/api', (req, res) => {
-//   res.json({ message: "Hello!" });
-// });
-
-// app.listen(PORT, () => {
-//   console.log(`Server listening on ${PORT}`);
-// })
